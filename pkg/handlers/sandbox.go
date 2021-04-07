@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"path"
 
-	jwtclaims "github.com/greenpau/caddy-auth-jwt/pkg/claims"
+	"github.com/greenpau/caddy-auth-jwt/pkg/claims"
 	"github.com/greenpau/caddy-auth-portal/pkg/backends"
 	"github.com/greenpau/caddy-auth-portal/pkg/cache"
 	"github.com/greenpau/caddy-auth-portal/pkg/ui"
@@ -33,7 +33,7 @@ func ServeSandbox(w http.ResponseWriter, r *http.Request, opts map[string]interf
 	ui := opts["ui"].(*ui.UserInterfaceFactory)
 	sandboxID := opts["sandbox_id"].(string)
 	sandboxView := opts["sandbox_view"].(string)
-	claims := opts["user_claims"].(*jwtclaims.UserClaims)
+	claims := opts["user_claims"].(*claims.UserClaims)
 	sandboxAction := opts["sandbox_action"].(string)
 
 	// Process authentication and registration requests

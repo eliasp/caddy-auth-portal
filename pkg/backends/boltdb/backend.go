@@ -18,8 +18,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	jwtclaims "github.com/greenpau/caddy-auth-jwt/pkg/claims"
-	jwtconfig "github.com/greenpau/caddy-auth-jwt/pkg/config"
+	"github.com/greenpau/caddy-auth-jwt/pkg/claims"
+	kms "github.com/greenpau/caddy-auth-jwt/pkg/kms"
 	"github.com/greenpau/go-identity"
 	"go.uber.org/zap"
 	"os"
@@ -33,7 +33,7 @@ type Backend struct {
 	Method        string                       `json:"method,omitempty"`
 	Realm         string                       `json:"realm,omitempty"`
 	Path          string                       `json:"path,omitempty"`
-	TokenProvider *jwtconfig.CommonTokenConfig `json:"jwt,omitempty"`
+	TokenProvider *kms.KeyManager              `json:"jwt,omitempty"`
 	Authenticator *Authenticator               `json:"-"`
 	logger        *zap.Logger
 }
@@ -43,7 +43,7 @@ type Backend struct {
 func NewDatabaseBackend() *Backend {
 	b := &Backend{
 		Method:        "boltdb",
-		TokenProvider: jwtconfig.NewCommonTokenConfig(),
+		TokenProvider: kms.NewKeyManager(),
 		Authenticator: NewAuthenticator(),
 	}
 	return b
@@ -96,7 +96,7 @@ func (sa *Authenticator) Configure() error {
 
 // AuthenticateUser checks the database for the presence of a username
 // and password and returns user claims.
-func (sa *Authenticator) AuthenticateUser(username, password string) (*jwtclaims.UserClaims, int, error) {
+func (sa *Authenticator) AuthenticateUser(username, password string) (*claims.UserClaims, int, error) {
 	sa.mux.Lock()
 	defer sa.mux.Unlock()
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -118,7 +118,7 @@ func (sa *Authenticator) AuthenticateUser(username, password string) (*jwtclaims
 		sa.logger.Info("user identity found", zap.String("username", username), zap.Int("user_id", userID))
 	}
 
-	claims := &jwtclaims.UserClaims{}
+	claims := &claims.UserClaims{}
 	claims.Subject = username
 	claims.Email = username
 	// claims.Name = "Greenberg, Paul"
@@ -227,12 +227,12 @@ func (b *Backend) GetName() string {
 }
 
 // ConfigureTokenProvider configures TokenProvider.
-func (b *Backend) ConfigureTokenProvider(upstream *jwtconfig.CommonTokenConfig) error {
+func (b *Backend) ConfigureTokenProvider(upstream *kms.KeyManager) error {
 	if upstream == nil {
 		return fmt.Errorf("upstream token provider is nil")
 	}
 	if b.TokenProvider == nil {
-		b.TokenProvider = jwtconfig.NewCommonTokenConfig()
+		b.TokenProvider = kms.NewKeyManager()
 	}
 	if b.TokenProvider.TokenSecret == "" {
 		b.TokenProvider.TokenSecret = upstream.TokenSecret

@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	jwtconfig "github.com/greenpau/caddy-auth-jwt/pkg/config"
+	kms "github.com/greenpau/caddy-auth-jwt/pkg/kms"
 	"github.com/greenpau/caddy-auth-portal/pkg/backends/boltdb"
 	"github.com/greenpau/caddy-auth-portal/pkg/backends/ldap"
 	"github.com/greenpau/caddy-auth-portal/pkg/backends/local"
@@ -43,7 +43,7 @@ type BackendDriver interface {
 	GetMethod() string
 	Authenticate(map[string]interface{}) (map[string]interface{}, error)
 	ConfigureLogger(*zap.Logger) error
-	ConfigureTokenProvider(*jwtconfig.CommonTokenConfig) error
+	ConfigureTokenProvider(*kms.KeyManager) error
 	ConfigureGlobalOptions(map[string]interface{}) error
 	ConfigureAuthenticator() error
 	Validate() error
@@ -80,7 +80,7 @@ func (b *Backend) Configure(opts map[string]interface{}) error {
 	if err := b.driver.ConfigureLogger(opts["logger"].(*zap.Logger)); err != nil {
 		return err
 	}
-	if err := b.driver.ConfigureTokenProvider(opts["token_provider"].(*jwtconfig.CommonTokenConfig)); err != nil {
+	if err := b.driver.ConfigureTokenProvider(opts["token_provider"].(*kms.KeyManager)); err != nil {
 		return err
 	}
 	globalOpts := make(map[string]interface{})

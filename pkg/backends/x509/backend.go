@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"sync"
 
-	jwtconfig "github.com/greenpau/caddy-auth-jwt/pkg/config"
+	kms "github.com/greenpau/caddy-auth-jwt/pkg/kms"
 	"github.com/greenpau/go-identity"
 
 	"go.uber.org/zap"
@@ -38,7 +38,7 @@ type Backend struct {
 	Name          string                       `json:"name,omitempty"`
 	Method        string                       `json:"method,omitempty"`
 	Realm         string                       `json:"realm,omitempty"`
-	TokenProvider *jwtconfig.CommonTokenConfig `json:"-"`
+	TokenProvider *kms.KeyManager              `json:"-"`
 	Authenticator *Authenticator               `json:"-"`
 	logger        *zap.Logger
 }
@@ -48,7 +48,7 @@ type Backend struct {
 func NewDatabaseBackend() *Backend {
 	b := &Backend{
 		Method:        "x509",
-		TokenProvider: jwtconfig.NewCommonTokenConfig(),
+		TokenProvider: kms.NewKeyManager(),
 		Authenticator: globalAuthenticator,
 	}
 	return b
@@ -142,12 +142,12 @@ func (b *Backend) GetName() string {
 }
 
 // ConfigureTokenProvider configures TokenProvider.
-func (b *Backend) ConfigureTokenProvider(upstream *jwtconfig.CommonTokenConfig) error {
+func (b *Backend) ConfigureTokenProvider(upstream *kms.KeyManager) error {
 	if upstream == nil {
 		return fmt.Errorf("upstream token provider is nil")
 	}
 	if b.TokenProvider == nil {
-		b.TokenProvider = jwtconfig.NewCommonTokenConfig()
+		b.TokenProvider = kms.NewKeyManager()
 	}
 	if b.TokenProvider.TokenSecret == "" {
 		b.TokenProvider.TokenSecret = upstream.TokenSecret

@@ -17,13 +17,13 @@ package oauth2
 import (
 	"fmt"
 	jwtlib "github.com/dgrijalva/jwt-go"
-	jwtclaims "github.com/greenpau/caddy-auth-jwt/pkg/claims"
+	"github.com/greenpau/caddy-auth-jwt/pkg/claims"
 	"github.com/greenpau/caddy-auth-portal/pkg/errors"
 	"strings"
 	"time"
 )
 
-func (b *Backend) validateAccessToken(state string, data map[string]interface{}) (*jwtclaims.UserClaims, error) {
+func (b *Backend) validateAccessToken(state string, data map[string]interface{}) (*claims.UserClaims, error) {
 	var tokenString string
 	if v, exists := data[b.IdentityTokenName]; exists {
 		tokenString = v.(string)
@@ -75,7 +75,7 @@ func (b *Backend) validateAccessToken(state string, data map[string]interface{})
 	}
 
 	// Create new claims
-	claims := &jwtclaims.UserClaims{
+	claims := &claims.UserClaims{
 		Origin:    b.TokenProvider.TokenOrigin + "/" + state,
 		ExpiresAt: time.Now().Add(time.Duration(b.TokenProvider.TokenLifetime) * time.Second).Unix(),
 		IssuedAt:  time.Now().Unix(),

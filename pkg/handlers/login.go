@@ -21,8 +21,8 @@ import (
 	"net/url"
 	"path"
 
-	jwtclaims "github.com/greenpau/caddy-auth-jwt/pkg/claims"
-	jwtconfig "github.com/greenpau/caddy-auth-jwt/pkg/config"
+	"github.com/greenpau/caddy-auth-jwt/pkg/claims"
+	kms "github.com/greenpau/caddy-auth-jwt/pkg/kms"
 
 	"time"
 
@@ -39,7 +39,7 @@ func ServeLogin(w http.ResponseWriter, r *http.Request, opts map[string]interfac
 	uiFactory := opts["ui"].(*ui.UserInterfaceFactory)
 	authURLPath := opts["auth_url_path"].(string)
 
-	tokenProvider := opts["token_provider"].(*jwtconfig.CommonTokenConfig)
+	tokenProvider := opts["token_provider"].(*kms.KeyManager)
 
 	cookies := opts["cookies"].(*cookies.Cookies)
 	redirectToToken := opts["redirect_token_name"].(string)
@@ -66,7 +66,7 @@ func ServeLogin(w http.ResponseWriter, r *http.Request, opts map[string]interfac
 
 	// Create JWT token
 	if opts["authenticated"].(bool) && !authorized {
-		claims := opts["user_claims"].(*jwtclaims.UserClaims)
+		claims := opts["user_claims"].(*claims.UserClaims)
 		claims.Issuer = utils.GetCurrentURL(r)
 		claims.IssuedAt = time.Now().Unix()
 		if claims.Metadata != nil {
@@ -191,7 +191,7 @@ func ServeAPILogin(w http.ResponseWriter, r *http.Request, opts map[string]inter
 	resp := make(map[string]interface{})
 	if opts["authenticated"].(bool) {
 		resp["authenticated"] = true
-		tokenProvider := opts["token_provider"].(*jwtconfig.CommonTokenConfig)
+		tokenProvider := opts["token_provider"].(*kms.KeyManager)
 		resp[tokenProvider.TokenName] = opts["user_token"].(string)
 	} else {
 		resp["authenticated"] = false

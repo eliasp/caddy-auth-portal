@@ -30,8 +30,8 @@ import (
 	"strings"
 	"time"
 
-	jwtclaims "github.com/greenpau/caddy-auth-jwt/pkg/claims"
-	jwtconfig "github.com/greenpau/caddy-auth-jwt/pkg/config"
+	"github.com/greenpau/caddy-auth-jwt/pkg/claims"
+	kms "github.com/greenpau/caddy-auth-jwt/pkg/kms"
 	"go.uber.org/zap"
 )
 
@@ -65,7 +65,7 @@ type Backend struct {
 	// by name, i.e. app. Each of the URLs is a separate endpoint.
 	AssertionConsumerServiceURLs []string `json:"acs_urls,omitempty"`
 
-	TokenProvider *jwtconfig.CommonTokenConfig `json:"-"`
+	TokenProvider *kms.KeyManager              `json:"-"`
 	logger        *zap.Logger
 }
 
@@ -74,7 +74,7 @@ type Backend struct {
 func NewDatabaseBackend() *Backend {
 	b := &Backend{
 		Method:        "saml",
-		TokenProvider: jwtconfig.NewCommonTokenConfig(),
+		TokenProvider: kms.NewKeyManager(),
 	}
 	return b
 }
@@ -276,7 +276,7 @@ func (b *Backend) Authenticate(opts map[string]interface{}) (map[string]interfac
 		return resp, fmt.Errorf("Failed to ParseXMLResponse: %s", err)
 	}
 
-	claims := &jwtclaims.UserClaims{}
+	claims := &claims.UserClaims{}
 
 	foundAttr := make(map[string]interface{})
 
@@ -374,12 +374,12 @@ func (b *Backend) GetName() string {
 }
 
 // ConfigureTokenProvider configures TokenProvider.
-func (b *Backend) ConfigureTokenProvider(upstream *jwtconfig.CommonTokenConfig) error {
+func (b *Backend) ConfigureTokenProvider(upstream *kms.KeyManager) error {
 	if upstream == nil {
 		return fmt.Errorf("upstream token provider is nil")
 	}
 	if b.TokenProvider == nil {
-		b.TokenProvider = jwtconfig.NewCommonTokenConfig()
+		b.TokenProvider = kms.NewKeyManager()
 	}
 	if b.TokenProvider.TokenSecret == "" {
 		b.TokenProvider.TokenSecret = upstream.TokenSecret

@@ -19,8 +19,8 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/go-ldap/ldap"
-	jwtclaims "github.com/greenpau/caddy-auth-jwt/pkg/claims"
-	jwtconfig "github.com/greenpau/caddy-auth-jwt/pkg/config"
+	"github.com/greenpau/caddy-auth-jwt/pkg/claims"
+	kms "github.com/greenpau/caddy-auth-jwt/pkg/kms"
 	"github.com/greenpau/go-identity"
 
 	"go.uber.org/zap"
@@ -79,7 +79,7 @@ type Backend struct {
 	SearchFilter       string                       `json:"search_filter,omitempty"`
 	Groups             []UserGroup                  `json:"groups,omitempty"`
 	TrustedAuthorities []string                     `json:"trusted_authorities,omitempty"`
-	TokenProvider      *jwtconfig.CommonTokenConfig `json:"-"`
+	TokenProvider      *kms.KeyManager              `json:"-"`
 	Authenticator      *Authenticator               `json:"-"`
 	logger             *zap.Logger
 }
@@ -89,7 +89,7 @@ type Backend struct {
 func NewDatabaseBackend() *Backend {
 	b := &Backend{
 		Method:        "ldap",
-		TokenProvider: jwtconfig.NewCommonTokenConfig(),
+		TokenProvider: kms.NewKeyManager(),
 		Authenticator: NewAuthenticator(),
 	}
 	return b
@@ -302,7 +302,7 @@ func (sa *Authenticator) ConfigureUserGroups(groups []UserGroup) error {
 
 // AuthenticateUser checks the database for the presence of a username/email
 // and password and returns user claims.
-func (sa *Authenticator) AuthenticateUser(userInput, passwordInput string) (*jwtclaims.UserClaims, int, error) {
+func (sa *Authenticator) AuthenticateUser(userInput, passwordInput string) (*claims.UserClaims, int, error) {
 	sa.mux.Lock()
 	defer sa.mux.Unlock()
 
@@ -522,7 +522,7 @@ func (sa *Authenticator) AuthenticateUser(userInput, passwordInput string) (*jwt
 			zap.String("server", server.Address),
 		)
 
-		claims := &jwtclaims.UserClaims{
+		claims := &claims.UserClaims{
 			Subject: userAccountName,
 		}
 		if userFullName != "" {
@@ -693,12 +693,12 @@ func (b *Backend) GetName() string {
 }
 
 // ConfigureTokenProvider configures TokenProvider.
-func (b *Backend) ConfigureTokenProvider(upstream *jwtconfig.CommonTokenConfig) error {
+func (b *Backend) ConfigureTokenProvider(upstream *kms.KeyManager) error {
 	if upstream == nil {
 		return fmt.Errorf("upstream token provider is nil")
 	}
 	if b.TokenProvider == nil {
-		b.TokenProvider = jwtconfig.NewCommonTokenConfig()
+		b.TokenProvider = kms.NewKeyManager()
 	}
 	if b.TokenProvider.TokenSecret == "" {
 		b.TokenProvider.TokenSecret = upstream.TokenSecret

@@ -17,9 +17,9 @@ package core
 import (
 	"crypto/rsa"
 	"fmt"
-	jwtacl "github.com/greenpau/caddy-auth-jwt/pkg/acl"
-	jwtconfig "github.com/greenpau/caddy-auth-jwt/pkg/config"
-	jwtvalidator "github.com/greenpau/caddy-auth-jwt/pkg/validator"
+	"github.com/greenpau/caddy-auth-jwt/pkg/acl"
+	kms "github.com/greenpau/caddy-auth-jwt/pkg/kms"
+	"github.com/greenpau/caddy-auth-jwt/pkg/validator"
 	"github.com/greenpau/caddy-auth-portal/pkg/cookies"
 	"github.com/greenpau/caddy-auth-portal/pkg/registration"
 	"github.com/greenpau/caddy-auth-portal/pkg/ui"
@@ -476,7 +476,7 @@ func (m *AuthPortalManager) Register(p *AuthPortal) error {
 	}
 
 	p.TokenValidator = jwtvalidator.NewTokenValidator()
-	tokenConfig := jwtconfig.NewCommonTokenConfig()
+	tokenConfig := kms.NewKeyManager()
 	tokenConfig.TokenName = p.TokenProvider.TokenName
 
 	switch p.TokenProvider.TokenSignMethod {
@@ -501,7 +501,7 @@ func (m *AuthPortalManager) Register(p *AuthPortal) error {
 			}
 		}
 	}
-	p.TokenValidator.TokenConfigs = []*jwtconfig.CommonTokenConfig{tokenConfig}
+	p.TokenValidator.KeyManagers = []*kms.KeyManager{tokenConfig}
 	if err := p.TokenValidator.ConfigureTokenBackends(); err != nil {
 		return fmt.Errorf(
 			"%s: token validator backend configuration failed: %s",
@@ -573,7 +573,7 @@ func (m *AuthPortalManager) Provision(name string) error {
 	}
 
 	if p.TokenProvider == nil {
-		p.TokenProvider = jwtconfig.NewCommonTokenConfig()
+		p.TokenProvider = kms.NewKeyManager()
 	}
 
 	if p.TokenProvider.TokenName == "" {
@@ -826,7 +826,7 @@ func (m *AuthPortalManager) Provision(name string) error {
 
 	// JWT Token Validator
 	p.TokenValidator = jwtvalidator.NewTokenValidator()
-	tokenConfig := jwtconfig.NewCommonTokenConfig()
+	tokenConfig := kms.NewKeyManager()
 	tokenConfig.TokenName = p.TokenProvider.TokenName
 
 	switch p.TokenProvider.TokenSignMethod {
@@ -852,7 +852,7 @@ func (m *AuthPortalManager) Provision(name string) error {
 		}
 	}
 
-	p.TokenValidator.TokenConfigs = []*jwtconfig.CommonTokenConfig{tokenConfig}
+	p.TokenValidator.KeyManagers = []*kms.KeyManager{tokenConfig}
 	if err := p.TokenValidator.ConfigureTokenBackends(); err != nil {
 		return fmt.Errorf(
 			"%s: token validator backend configuration failed: %s",

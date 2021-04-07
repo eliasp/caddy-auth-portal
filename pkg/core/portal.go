@@ -21,9 +21,9 @@ import (
 	"strings"
 	"time"
 
-	jwtclaims "github.com/greenpau/caddy-auth-jwt/pkg/claims"
-	jwtconfig "github.com/greenpau/caddy-auth-jwt/pkg/config"
-	jwtvalidator "github.com/greenpau/caddy-auth-jwt/pkg/validator"
+	"github.com/greenpau/caddy-auth-jwt/pkg/claims"
+	kms "github.com/greenpau/caddy-auth-jwt/pkg/kms"
+	"github.com/greenpau/caddy-auth-jwt/pkg/validator"
 
 	"github.com/greenpau/caddy-auth-portal/pkg/backends"
 	"github.com/greenpau/caddy-auth-portal/pkg/cache"
@@ -70,7 +70,7 @@ type AuthPortal struct {
 	UserRegistrationDatabase *identity.Database           `json:"-"`
 	Cookies                  *cookies.Cookies             `json:"cookies,omitempty"`
 	Backends                 []backends.Backend           `json:"backends,omitempty"`
-	TokenProvider            *jwtconfig.CommonTokenConfig `json:"jwt,omitempty"`
+	TokenProvider            *kms.KeyManager              `json:"jwt,omitempty"`
 	EnableSourceIPTracking   bool                         `json:"source_ip_tracking,omitempty"`
 	RequireMFA               bool                         `json:"require_mfa,omitempty"`
 	TokenValidator           *jwtvalidator.TokenValidator `json:"-"`
@@ -220,7 +220,7 @@ func (p *AuthPortal) ServeHTTP(w http.ResponseWriter, r *http.Request, upstreamO
 	case strings.HasPrefix(urlPath, "settings"):
 		opts["flow"] = "settings"
 		if opts["authenticated"].(bool) {
-			claims := opts["user_claims"].(*jwtclaims.UserClaims)
+			claims := opts["user_claims"].(*claims.UserClaims)
 			if sessionData, err := sessionCache.Get(claims.ID); err != nil {
 				log.Warn(
 					"Failed to get session id to claims mapping",
@@ -256,7 +256,7 @@ func (p *AuthPortal) ServeHTTP(w http.ResponseWriter, r *http.Request, upstreamO
 		var err error
 		var sessionData map[string]interface{}
 		var mfaConfig map[string]bool
-		var claims *jwtclaims.UserClaims
+		var claims *claims.UserClaims
 		var sandboxAuthFailed bool
 
 		opts["flow"] = "sandbox"
@@ -387,7 +387,7 @@ func (p *AuthPortal) ServeHTTP(w http.ResponseWriter, r *http.Request, upstreamO
 			)
 			return handlers.ServeGeneric(w, r, opts)
 		}
-		claims = rawClaims.(*jwtclaims.UserClaims)
+		claims = rawClaims.(*claims.UserClaims)
 
 		if claims.Metadata == nil {
 			// Session cache entry did not have metadata for user claims
@@ -740,7 +740,7 @@ func (p *AuthPortal) ServeHTTP(w http.ResponseWriter, r *http.Request, upstreamO
 				return handlers.ServeGeneric(w, r, opts)
 			}
 
-			claims := resp["claims"].(*jwtclaims.UserClaims)
+			claims := resp["claims"].(*claims.UserClaims)
 			claims.ID = reqID
 			claims.Issuer = utils.GetCurrentURL(r)
 			if p.EnableSourceIPTracking {
@@ -791,7 +791,7 @@ func (p *AuthPortal) ServeHTTP(w http.ResponseWriter, r *http.Request, upstreamO
 								zap.String("error", err.Error()),
 							)
 						} else {
-							claims := resp["claims"].(*jwtclaims.UserClaims)
+							claims := resp["claims"].(*claims.UserClaims)
 							claims.ID = reqID
 							claims.Issuer = utils.GetCurrentURL(r)
 							if p.EnableSourceIPTracking {

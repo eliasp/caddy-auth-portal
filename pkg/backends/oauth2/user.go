@@ -20,7 +20,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	jwtclaims "github.com/greenpau/caddy-auth-jwt/pkg/claims"
+	"github.com/greenpau/caddy-auth-jwt/pkg/claims"
 	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
@@ -30,7 +30,7 @@ import (
 	"time"
 )
 
-func (b *Backend) fetchClaims(tokenData map[string]interface{}) (*jwtclaims.UserClaims, error) {
+func (b *Backend) fetchClaims(tokenData map[string]interface{}) (*claims.UserClaims, error) {
 	var userURL string
 	var req *http.Request
 	var err error
@@ -141,7 +141,7 @@ func (b *Backend) fetchClaims(tokenData map[string]interface{}) (*jwtclaims.User
 	}
 
 	// Create new claims
-	claims := &jwtclaims.UserClaims{
+	claims := &claims.UserClaims{
 		//ID:        tokenID,
 		Origin:    userURL,
 		ExpiresAt: time.Now().Add(time.Duration(b.TokenProvider.TokenLifetime) * time.Second).Unix(),

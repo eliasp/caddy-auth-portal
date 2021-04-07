@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	jwtclaims "github.com/greenpau/caddy-auth-jwt/pkg/claims"
+	"github.com/greenpau/caddy-auth-jwt/pkg/claims"
 )
 
 const defaultSessionCleanupInternal int = 60
@@ -179,7 +179,7 @@ func (e *SessionCacheEntry) Valid() error {
 	if !exists {
 		return errors.New("cached session id entry has no claims")
 	}
-	claims := v.(*jwtclaims.UserClaims)
+	claims := v.(*claims.UserClaims)
 	if err := claims.Valid(); err != nil {
 		return err
 	}
